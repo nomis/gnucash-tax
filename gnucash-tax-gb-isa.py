@@ -33,9 +33,9 @@ Allowance = namedtuple("Allowance", ["cash", "stocks", "total"])
 
 locale.setlocale(locale.LC_ALL, "")
 
-ACCOUNT_DESC_ISA_RE = re.compile(r'(Closed )?(Cash|Stocks & Shares) ISA ?')
-ACCOUNT_DESC_CASH_ISA_RE = re.compile(r'(Closed )?Cash ISA ?')
-ACCOUNT_DESC_STOCKS_ISA_RE = re.compile(r'(Closed )?Stocks & Shares ISA ?')
+ACCOUNT_DESC_ISA_RE = re.compile(r"(Closed )?(Cash|Stocks & Shares) ISA ?")
+ACCOUNT_DESC_CASH_ISA_RE = re.compile(r"(Closed )?Cash ISA ?")
+ACCOUNT_DESC_STOCKS_ISA_RE = re.compile(r"(Closed )?Stocks & Shares ISA ?")
 
 ALLOWANCES = {
 	"1999/00": Allowance(Decimal( "3000.00"), Decimal( "7000.00"), Decimal( "7000.00")),
@@ -72,7 +72,6 @@ def path2str(path):
 
 
 def frac2gbp(frac):
-	#return f"£{float(frac):,.2f}"
 	return float(frac)
 
 
@@ -129,6 +128,7 @@ def is_contribution_account(account):
 			return False
 
 	return True
+
 
 def isa_accounts(session):
 	accounts = {}
@@ -211,7 +211,7 @@ if __name__ == "__main__":
 	root.setLevel(level=logging.DEBUG)
 
 	handler = logging.StreamHandler(sys.stdout)
-	handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s %(message)s'))
+	handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
 	root.addHandler(handler)
 
 	ok = True
