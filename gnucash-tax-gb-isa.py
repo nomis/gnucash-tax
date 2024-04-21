@@ -71,10 +71,6 @@ def path2str(path):
 	return ":".join(path)
 
 
-def frac2gbp(frac):
-	return float(frac)
-
-
 def tax_year(date):
 	if date.month == 4 and date.day >= 6:
 		year = date.year
@@ -174,7 +170,7 @@ def review_isa_year(year, deposits):
 
 	rows = []
 	for deposit in sorted(deposits):
-		rows.append([deposit.date, frac2gbp(deposit.amount), deposit.account])
+		rows.append([deposit.date, float(deposit.amount), deposit.account])
 		contributions[deposit.type] += deposit.amount
 		contributions["total"] += deposit.amount
 	print(tabulate(rows, ["Date", "Amount", "Account"], tablefmt="rounded_outline", floatfmt=",.2f"))
@@ -183,9 +179,9 @@ def review_isa_year(year, deposits):
 	for account_type, type_name in {"cash": "Cash", "stocks": "S&S", "total": "Total"}.items():
 		rows.append([
 				type_name,
-				frac2gbp(allowance[account_type]),
-				frac2gbp(contributions[account_type]),
-				frac2gbp(Fraction(allowance[account_type]) - contributions[account_type])
+				float(allowance[account_type]),
+				float(contributions[account_type]),
+				float(Fraction(allowance[account_type]) - contributions[account_type])
 			])
 	print(tabulate(rows, ["", "Allowance", "Contributions", "Remaining"], tablefmt="rounded_grid", floatfmt=",.2f"))
 
