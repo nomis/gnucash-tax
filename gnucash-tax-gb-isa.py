@@ -120,7 +120,7 @@ def is_contribution_account(account):
 			names.add(parent.GetName())
 			parent = parent.get_parent()
 
-		if names & set(("Interest", "Dividends", "Investments")):
+		if names & set(("Interest", "Dividends")):
 			return False
 
 	return True

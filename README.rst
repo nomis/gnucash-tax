@@ -15,9 +15,8 @@ unless they are:
 
 * Income accounts with a name (or parent name) of:
 
-  * "Interest"
   * "Dividends"
-  * "Investments"
+  * "Interest"
 
 * Mutual Fund accounts
 * Stock accounts
