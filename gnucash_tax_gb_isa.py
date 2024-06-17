@@ -137,13 +137,15 @@ def isa_accounts(session):
 	return accounts
 
 
-def isa_account_deposits(name, account):
+def isa_account_deposits(name, account, at_date):
 	deposits = []
 	guid = account.GetGUID().to_string()
 	account_type = isa_account_type(account)
 
 	for txn in account.GetSplitList():
 		date = txn.parent.GetDate().date()
+		if date > at_date:
+			continue
 		year = tax_year(date)
 		amount = Fraction()
 		contribution = False
@@ -163,6 +165,8 @@ def isa_account_deposits(name, account):
 
 
 def review_isa_year(year, deposits):
+	if year not in ALLOWANCES:
+		year = sorted(ALLOWANCES.keys())[-1]
 	allowance = ALLOWANCES[year]._asdict()
 	contributions = defaultdict(Fraction)
 
@@ -184,16 +188,19 @@ def review_isa_year(year, deposits):
 	return {"txns": txns, "allowances": allowances}
 
 
-def review_isa_accounts(session):
+def review_isa_accounts(session, at_date=None):
 	accounts = isa_accounts(session)
 	deposits = defaultdict(list)
 	years = {}
 
+	if at_date is None:
+		at_date = datetime.today().date()
+
 	for path, account in accounts.items():
-		for deposit in isa_account_deposits(path2str(path), account):
+		for deposit in isa_account_deposits(path2str(path), account, at_date):
 			deposits[deposit.year].append(deposit)
 
-	for year in sorted(deposits.keys()):
+	for year in sorted(set(deposits.keys()) | set([tax_year(at_date)])):
 		years[year] = review_isa_year(year, deposits[year])
 
 	return years
@@ -202,22 +209,23 @@ def review_isa_accounts(session):
 def print_isa_review(years):
 	for year in sorted(years.keys()):
 		print(tabulate([[year]], tablefmt="heavy_outline"))
-		print(tabulate(years[year]["txns"], ["Date", "Amount", "Account"], tablefmt="rounded_outline", floatfmt=",.2f"))
+		if years[year]["txns"]:
+			print(tabulate(years[year]["txns"], ["Date", "Amount", "Account"], tablefmt="rounded_outline", floatfmt=",.2f"))
 		print(tabulate(years[year]["allowances"], ["", "Allowance", "Contributions", "Remaining"], tablefmt="rounded_grid", floatfmt=",.2f"))
 
 
-def process_session(session):
-	return review_isa_accounts(session)
+def process_session(session, *, at_date=None):
+	return review_isa_accounts(session, at_date)
 
 
-def process_file(filename):
+def process_file(filename, *, at_date=None):
 	before = datetime.today()
 	session = gnucash.Session(filename, mode=gnucash.SessionOpenMode.SESSION_READ_ONLY)
 	after = datetime.today()
 	logging.debug(f"File load time: {after - before}")
 
 	try:
-		return process_session(session)
+		return process_session(session, at_date=at_date)
 	finally:
 		session.end()
 		session.destroy()
@@ -228,6 +236,7 @@ def process_file(filename):
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description="GnuCash allowance reporting for UK Cash/S&S ISAs")
 	parser.add_argument("-f", "--file", dest="file", required=True, help="GnuCash file")
+	parser.add_argument("-d", "--date", dest="date", help="Show values as at date")
 	args = parser.parse_args()
 
 	root = logging.getLogger()
@@ -241,7 +250,10 @@ if __name__ == "__main__":
 
 	logging.debug("Start")
 
-	data = process_file(args.file)
+	if args.date:
+		args.date = datetime.strptime(args.date, "%Y-%m-%d").date()
+
+	data = process_file(args.file, at_date=args.date)
 	if data is not None:
 		print_isa_review(data)
 		ok = True
