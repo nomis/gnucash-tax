@@ -144,7 +144,7 @@ def isa_account_deposits(name, account, at_date):
 
 	for txn in account.GetSplitList():
 		date = txn.parent.GetDate().date()
-		if date > at_date:
+		if at_date and date > at_date:
 			continue
 		year = tax_year(date)
 		amount = Fraction()
@@ -193,14 +193,11 @@ def review_isa_accounts(session, at_date=None):
 	deposits = defaultdict(list)
 	years = {}
 
-	if at_date is None:
-		at_date = datetime.today().date()
-
 	for path, account in accounts.items():
 		for deposit in isa_account_deposits(path2str(path), account, at_date):
 			deposits[deposit.year].append(deposit)
 
-	for year in sorted(set(deposits.keys()) | set([tax_year(at_date)])):
+	for year in sorted(set(deposits.keys()) | set([tax_year(at_date)] if at_date else [])):
 		years[year] = review_isa_year(year, deposits[year])
 
 	return years
