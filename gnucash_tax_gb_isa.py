@@ -137,14 +137,14 @@ def isa_accounts(session):
 	return accounts
 
 
-def isa_account_deposits(name, account, at_date):
+def isa_account_deposits(name, account, at_date, before_date):
 	deposits = []
 	guid = account.GetGUID().to_string()
 	account_type = isa_account_type(account)
 
 	for txn in account.GetSplitList():
 		date = txn.parent.GetDate().date()
-		if at_date and date > at_date:
+		if at_date and (date > at_date or (before_date and date == at_date)):
 			continue
 		year = tax_year(date)
 		amount = Fraction()
@@ -188,13 +188,13 @@ def review_isa_year(year, deposits):
 	return {"txns": txns, "allowances": allowances}
 
 
-def review_isa_accounts(session, at_date=None):
+def review_isa_accounts(session, at_date=None, before_date=False):
 	accounts = isa_accounts(session)
 	deposits = defaultdict(list)
 	years = {}
 
 	for path, account in accounts.items():
-		for deposit in isa_account_deposits(path2str(path), account, at_date):
+		for deposit in isa_account_deposits(path2str(path), account, at_date, before_date):
 			deposits[deposit.year].append(deposit)
 
 	for year in sorted(set(deposits.keys()) | set([tax_year(at_date)] if at_date else [])):
@@ -211,11 +211,11 @@ def print_isa_review(years):
 		print(tabulate(years[year]["allowances"], ["", "Allowance", "Contributions", "Remaining"], tablefmt="rounded_grid", floatfmt=",.2f"))
 
 
-def process_session(session, *, at_date=None):
-	return review_isa_accounts(session, at_date)
+def process_session(session, *, at_date=None, before_date=False):
+	return review_isa_accounts(session, at_date, before_date)
 
 
-def process_file(filename, *, at_date=None):
+def process_file(filename, *, at_date=None, before_date=False):
 	before = datetime.today()
 	session = gnucash.Session(filename, mode=gnucash.SessionOpenMode.SESSION_READ_ONLY)
 	after = datetime.today()
