@@ -166,36 +166,63 @@ def review_isa_year(year, deposits):
 	allowance = ALLOWANCES[year]._asdict()
 	contributions = defaultdict(Fraction)
 
-	print(tabulate([[year]], tablefmt="heavy_outline"))
-
-	rows = []
+	txns = []
 	for deposit in sorted(deposits):
-		rows.append([deposit.date, float(deposit.amount), deposit.account])
+		txns.append([deposit.date, float(deposit.amount), deposit.account])
 		contributions[deposit.type] += deposit.amount
 		contributions["total"] += deposit.amount
-	print(tabulate(rows, ["Date", "Amount", "Account"], tablefmt="rounded_outline", floatfmt=",.2f"))
 
-	rows = []
+	allowances = []
 	for account_type, type_name in {"cash": "Cash", "stocks": "S&S", "total": "Total"}.items():
-		rows.append([
+		allowances.append([
 				type_name,
 				float(allowance[account_type]),
 				float(contributions[account_type]),
 				float(Fraction(allowance[account_type]) - contributions[account_type])
 			])
-	print(tabulate(rows, ["", "Allowance", "Contributions", "Remaining"], tablefmt="rounded_grid", floatfmt=",.2f"))
+
+	return {"txns": txns, "allowances": allowances}
 
 
 def review_isa_accounts(session):
 	accounts = isa_accounts(session)
 	deposits = defaultdict(list)
+	years = {}
 
 	for path, account in accounts.items():
 		for deposit in isa_account_deposits(path2str(path), account):
 			deposits[deposit.year].append(deposit)
 
 	for year in sorted(deposits.keys()):
-		review_isa_year(year, deposits[year])
+		years[year] = review_isa_year(year, deposits[year])
+
+	return years
+
+
+def print_isa_review(years):
+	for year in sorted(years.keys()):
+		print(tabulate([[year]], tablefmt="heavy_outline"))
+		print(tabulate(years[year]["txns"], ["Date", "Amount", "Account"], tablefmt="rounded_outline", floatfmt=",.2f"))
+		print(tabulate(years[year]["allowances"], ["", "Allowance", "Contributions", "Remaining"], tablefmt="rounded_grid", floatfmt=",.2f"))
+
+
+def process_session(session):
+	return review_isa_accounts(session)
+
+
+def process_file(filename):
+	before = datetime.today()
+	session = gnucash.Session(filename, mode=gnucash.SessionOpenMode.SESSION_READ_ONLY)
+	after = datetime.today()
+	logging.debug(f"File load time: {after - before}")
+
+	try:
+		return process_session(session)
+	finally:
+		session.end()
+		session.destroy()
+
+	return None
 
 
 if __name__ == "__main__":
@@ -210,20 +237,14 @@ if __name__ == "__main__":
 	handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
 	root.addHandler(handler)
 
-	ok = True
+	ok = False
 
 	logging.debug("Start")
 
-	before = datetime.today()
-	session = gnucash.Session(args.file, mode=gnucash.SessionOpenMode.SESSION_READ_ONLY)
-	after = datetime.today()
-	logging.debug(f"File load time: {after - before}")
-
-	try:
-		review_isa_accounts(session)
-	finally:
-		session.end()
-		session.destroy()
+	data = process_file(args.file)
+	if data is not None:
+		print_isa_review(data)
+		ok = True
 
 	logging.debug("Finish")
 
