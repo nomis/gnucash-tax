@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright 2024  Simon Arlott
+# Copyright 2024,2026  Simon Arlott
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -64,6 +64,9 @@ ALLOWANCES = {
 	"2022/23": Allowance(Decimal("20000.00"), Decimal("20000.00"), Decimal("20000.00")),
 	"2023/24": Allowance(Decimal("20000.00"), Decimal("20000.00"), Decimal("20000.00")),
 	"2024/25": Allowance(Decimal("20000.00"), Decimal("20000.00"), Decimal("20000.00")),
+	"2025/26": Allowance(Decimal("20000.00"), Decimal("20000.00"), Decimal("20000.00")),
+	"2026/27": Allowance(Decimal("20000.00"), Decimal("20000.00"), Decimal("20000.00")),
+	"2027/28": Allowance(Decimal("12000.00"), Decimal("20000.00"), Decimal("20000.00")),
 }
 
 
